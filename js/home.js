@@ -136,9 +136,9 @@ export function mountHome(root, { openDoc, openTheme, openPrefs, importFiles }) 
       listBox.replaceChildren(h('div', { class: 'doc-grid' }, list.map(d => {
         const more = h('button', { class: 'ib sm', 'aria-label': 'Opsi lainnya', onclick: e => { e.stopPropagation(); toggleMenu(more, () => cardMenu(d), { align: 'right' }); } }, icon('more_vert'));
         return h('div', { class: 'dcard glass', tabindex: '0', role: 'button', 'aria-label': d.title, onclick: () => open(d), onkeydown: e => { if (e.key === 'Enter') open(d); } },
-          renderThumb(d.preview || '', d.page, d.styles),
+          d.locked ? h('div', { class: 'thumb lk-thumb' }, icon('lock', 'fill')) : renderThumb(d.preview || '', d.page, d.styles),
           h('div', { class: 'dcard-f' }, h('div', { class: 'dcard-t', title: d.title }, d.title || 'Tanpa judul'),
-            h('div', { class: 'dcard-m' }, icon('article'), d.starred ? icon('star', 'fill star-on xs') : null, h('span', { title: fmtFull(d.modified) }, when(d))), more));
+            h('div', { class: 'dcard-m' }, icon(d.locked ? 'lock' : 'article'), d.starred ? icon('star', 'fill star-on xs') : null, h('span', { title: fmtFull(d.modified) }, when(d))), more));
       })));
     } else {
       listBox.replaceChildren(h('div', { class: 'dlist glass' },
@@ -146,7 +146,7 @@ export function mountHome(root, { openDoc, openTheme, openPrefs, importFiles }) 
         list.map(d => {
           const more = h('button', { class: 'ib sm', 'aria-label': 'Opsi lainnya', onclick: e => { e.stopPropagation(); toggleMenu(more, () => cardMenu(d), { align: 'right' }); } }, icon('more_vert'));
           return h('div', { class: 'dl-r', onclick: () => open(d) },
-            h('div', { class: 'dl-n' }, icon('article'), d.starred ? icon('star', 'fill star-on xs') : null, h('span', null, d.title || 'Tanpa judul')),
+            h('div', { class: 'dl-n' }, icon(d.locked ? 'lock' : 'article'), d.starred ? icon('star', 'fill star-on xs') : null, h('span', null, d.title || 'Tanpa judul')),
             h('div', { class: 'muted' }, fmtWhen(d.opened)), h('div', { class: 'muted' }, fmtWhen(d.modified)), more);
         })));
     }
@@ -160,7 +160,7 @@ export function mountHome(root, { openDoc, openTheme, openPrefs, importFiles }) 
     return [
       { label: 'Ganti nama', icon: 'drive_file_rename_outline', run: async () => { const t = await ask({ title: 'Ganti nama', label: 'Masukkan nama baru untuk dokumen', value: d.title, ok: 'Simpan' }); if (t?.trim()) { await Store.patch(d.id, { title: t.trim() }); load(); } } },
       { label: d.starred ? 'Hapus bintang' : 'Beri bintang', icon: 'star', run: async () => { await Store.patch(d.id, { starred: !d.starred }); load(); } },
-      { label: 'Buat salinan', icon: 'content_copy', run: async () => { const full = await Store.get(d.id); const c = newDoc({ ...full, title: 'Salinan ' + full.title }); Object.assign(c, { comments: full.comments, footnotes: full.footnotes, assets: full.assets, drawings: full.drawings, charts: full.charts, citations: full.citations, preview: full.preview }); await Store.put(c); toast('Salinan dibuat'); load(); } },
+      { label: 'Buat salinan', icon: 'content_copy', run: async () => { const full = await Store.get(d.id); const c = newDoc({ ...full, title: 'Salinan ' + full.title }); Object.assign(c, { comments: full.comments, footnotes: full.footnotes, assets: full.assets, drawings: full.drawings, charts: full.charts, citations: full.citations, preview: full.preview, lock: full.lock }); await Store.put(c); toast('Salinan dibuat'); load(); } },
       { label: 'Buka di tab baru', icon: 'open_in_new', run: () => window.open(location.pathname + '#/d/' + d.id, '_blank') },
       { sep: true },
       { label: 'Hapus', icon: 'delete', run: async () => { await Store.patch(d.id, { trashed: Date.now() }); toast(`"${d.title}" dipindahkan ke sampah`, { action: 'Urungkan', onAction: async () => { await Store.patch(d.id, { trashed: 0 }); load(); } }); load(); } },

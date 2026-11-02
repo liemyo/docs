@@ -30,7 +30,7 @@ const app = {
     await E.save();
     const src = E.doc;
     const d = newDoc({ title: 'Salinan ' + src.title, html: src.html, page: JSON.parse(JSON.stringify(src.page)), styles: JSON.parse(JSON.stringify(src.styles)), assets: { ...src.assets }, footnotes: { ...src.footnotes } });
-    Object.assign(d, { drawings: src.drawings, charts: src.charts, citations: src.citations, citeStyle: src.citeStyle, preview: src.preview });
+    Object.assign(d, { drawings: src.drawings, charts: src.charts, citations: src.citations, citeStyle: src.citeStyle, preview: src.preview, lock: src.lock });
     await Store.put(d);
     toast('Salinan dibuat', { action: 'Buka', onAction: () => go(d.id) });
   },
@@ -48,7 +48,7 @@ const app = {
     const draw = () => {
       const s = q.value.trim().toLowerCase();
       const res = docs.filter(d => !s || (d.title || '').toLowerCase().includes(s));
-      list.replaceChildren(...res.map(d => h('div', { class: 'dl-r', onclick: () => { closeAll(); go(d.id); } }, h('div', { class: 'dl-n' }, icon('article'), h('span', null, d.title || 'Tanpa judul')), h('div', { class: 'muted' }, fmtWhen(d.opened || d.modified)))));
+      list.replaceChildren(...res.map(d => h('div', { class: 'dl-r', onclick: () => { closeAll(); go(d.id); } }, h('div', { class: 'dl-n' }, icon(d.locked ? 'lock' : 'article'), h('span', null, d.title || 'Tanpa judul')), h('div', { class: 'muted' }, fmtWhen(d.opened || d.modified)))));
       if (!res.length) list.append(h('div', { class: 'ol-empty' }, 'Tidak ada dokumen'));
     };
     let closeAll = () => {};

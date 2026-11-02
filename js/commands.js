@@ -14,7 +14,8 @@ import { openFind } from './find.js';
 import { toggleVoice } from './voice.js';
 import { goHF, pageNumbersDialog } from './hf.js';
 import { FONTS, fontCss } from './fonts.js';
-import { STYLE_NAMES } from './docmodel.js';
+import { STYLE_NAMES, PAPER, MARGINS, marginPreset } from './docmodel.js';
+import * as Lock from './lock.js';
 import { Theme } from './theme.js';
 
 export const CMD = {};
@@ -53,6 +54,14 @@ def('versions', { label: 'Lihat histori versi', icon: 'history', kbd: 'Mod+Alt+S
 def('nameversion', { label: 'Beri nama versi saat ini', icon: 'bookmark_add', run: () => P.nameVersion() });
 def('docinfo', { label: 'Detail', icon: 'info', run: () => D.docInfoDialog() });
 def('pagesetup', { label: 'Penyiapan halaman', icon: 'description', run: () => D.pageSetup() });
+/* ---- Layout (kertas & margin) ---- */
+const setPage = fn => { E.hist.before(); fn(E.doc.page); E.changed(); E.applyView(); };
+for (const [k, n, v] of MARGINS) def('mg-' + k, { label: `${n}  ·  ${v.map(x => String(x).replace('.', ',')).join(' / ')} cm`, icon: 'margin', checked: () => marginPreset(E.doc.page.margins) === k, enabled: editing, run: () => setPage(p => { [p.margins.t, p.margins.b, p.margins.l, p.margins.r] = v; }) });
+for (const [k, v] of Object.entries(PAPER)) def('ps-' + k, { label: `${v.n}  ·  ${v.d}`, checked: () => E.doc.page.size === k, enabled: editing, run: () => setPage(p => { p.size = k; }) });
+def('mg-custom', { label: 'Margin kustom…', icon: 'tune', enabled: editing, run: () => D.pageSetup() });
+def('lock-set', { label: () => E.doc?.lock ? 'Ubah kata sandi…' : 'Kunci dengan kata sandi…', icon: 'lock', enabled: () => editing() && !(E.doc?.share && !E.doc.share.owner), run: () => Lock.setDialog() });
+def('lock-now', { label: 'Kunci sekarang', icon: 'lock_clock', enabled: () => !!E.doc?.lock, run: () => Lock.lockNow() });
+def('lock-off', { label: 'Hapus kata sandi…', icon: 'lock_open', enabled: () => !!E.doc?.lock && editing(), run: () => Lock.removeDialog() });
 def('print', { label: 'Cetak', icon: 'print', kbd: 'Mod+P', global: true, run: () => IO.printDoc(false) });
 def('save', { label: 'Simpan', icon: 'save', kbd: 'Mod+S', global: true, run: () => { E.save(); toast('Semua perubahan tersimpan di perangkat ini'); } });
 for (const [k, l] of [['docx', 'Microsoft Word (.docx)'], ['pdf', 'Dokumen PDF (.pdf)'], ['html', 'Halaman web (.html)'], ['md', 'Markdown (.md)'], ['txt', 'Teks biasa (.txt)'], ['json', 'Cadangan Amatu Docs (.json)']]) {
@@ -244,6 +253,7 @@ export const MENUS = [
     'rename', 'trash', '-',
     sub('Histori versi', 'history', ['nameversion', 'versions']), '-',
     'docinfo', sub('Bahasa', 'language', ['lang-id', 'lang-en']), '-',
+    sub('Keamanan', 'lock', ['lock-set', 'lock-now', 'lock-off']), '-',
     'pagesetup', 'print') },
   { id: 'edit', label: 'Edit', items: () => I_('undo', 'redo', '-', 'cut', 'copy', 'paste', 'pasteplain', '-', 'selectall', 'delete', '-', 'replace') },
   { id: 'view', label: 'Tampilan', items: () => I_(sub('Mode', 'edit', ['mode-edit', 'mode-suggest', 'mode-view']), '-', 'pageless', 'ruler', 'outline', 'np', '-', sub('Zoom', 'zoom_in', ['zoom-fit', '-', 'zoom-50', 'zoom-75', 'zoom-90', 'zoom-100', 'zoom-125', 'zoom-150', 'zoom-200', '-', 'zoomin', 'zoomout']), '-', 'focus', 'fullscreen', 'compact', '-', 'theme', 'darkpaper') },
@@ -270,6 +280,15 @@ export const MENUS = [
     { label: 'Tabel', icon: 'table', sub: tableItems },
     'borders', 'dropcap', '-',
     'paintformat', 'clearfmt') },
+  { id: 'layout', label: 'Tata letak', items: () => I_(
+    sub('Margin', 'margin', [...MARGINS.map(([k]) => 'mg-' + k), '-', 'mg-custom']),
+    sub('Orientasi', 'screen_rotation', ['orient-portrait', 'orient-landscape']),
+    sub('Ukuran kertas', 'description', [...Object.keys(PAPER).map(k => 'ps-' + k), '-', { label: 'Ukuran & warna lainnya…', icon: 'tune', run: () => D.pageSetup() }]),
+    sub('Kolom', 'view_column', ['cols-1', 'cols-2', 'cols-3']),
+    sub('Pemisah', 'insert_page_break', ['pagebreak']), '-',
+    sub('Header & footer', 'call_to_action', ['header', 'footer']), 'pagenumbers', 'watermark', '-',
+    'pageless', 'ruler', '-',
+    'pagesetup') },
   { id: 'tools', label: 'Alat', items: () => I_('spell', 'wordcount', '-', 'review', 'comments', 'citations', '-', 'voice', sub('Urutkan paragraf', 'sort_by_alpha', ['sort-asc', 'sort-desc']), '-', 'prefs') },
   { id: 'help', label: 'Bantuan', items: () => I_('menusearch', 'shortcuts', '-', 'about') },
 ];

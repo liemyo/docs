@@ -1,7 +1,7 @@
 // Dialogs: page setup, word count, styles, preferences, theme, spacing, indentation, borders, watermark, shortcuts, info.
 import { E, Prefs, savePrefs, me } from './state.js';
 import { h, icon, toast, dialog, field, select, numInput, toggle, segmented, tabs, palette, openMenu, closeMenus, kbdLabel, fmtFull, fmtNum, pickFile, readFile, avatar } from './ui.js';
-import { PAPER, STYLE_KEYS, STYLE_NAMES, DEFAULT_STYLES, resolvedStyle, px2cm, cm2px } from './docmodel.js';
+import { PAPER, MARGINS, marginPreset, STYLE_KEYS, STYLE_NAMES, DEFAULT_STYLES, resolvedStyle, px2cm, cm2px } from './docmodel.js';
 import { FONTS, ensureFont } from './fonts.js';
 import { Theme, ACCENTS } from './theme.js';
 import { selBlocks, setIndentPx, setLineHeight, setSpace, setBlockBorder } from './format.js';
@@ -26,9 +26,9 @@ export async function pageSetup() {
   const orientSeg = segmented([['portrait', 'Potret', 'crop_portrait'], ['landscape', 'Lanskap', 'crop_landscape']], p.orient, v => { p.orient = v; draw(); });
   const m = {};
   for (const k of ['t', 'b', 'l', 'r']) m[k] = numInput(+p.margins[k].toFixed(2), { min: 0, max: 15, step: .1 });
-  const preset = select([['', 'Kustom'], ['normal', 'Normal (2,54 cm)'], ['narrow', 'Sempit (1,27 cm)'], ['moderate', 'Sedang (2,54 / 1,91 cm)'], ['wide', 'Lebar (2,54 / 5,08 cm)'], ['skripsi', 'Skripsi (4-3-3-4 cm)']], '');
+  const preset = select([['', 'Kustom'], ...MARGINS.map(([k, n, v]) => [k, `${n} (${v.map(x => String(x).replace('.', ',')).join(' / ')} cm)`])], marginPreset(p.margins));
   preset.onchange = () => {
-    const P = { normal: [2.54, 2.54, 2.54, 2.54], narrow: [1.27, 1.27, 1.27, 1.27], moderate: [2.54, 2.54, 1.91, 1.91], wide: [2.54, 2.54, 5.08, 5.08], skripsi: [4, 3, 4, 3] }[preset.value];
+    const P = MARGINS.find(x => x[0] === preset.value)?.[2];
     if (P) { m.t.value = P[0]; m.b.value = P[1]; m.l.value = P[2]; m.r.value = P[3]; draw(); }
   };
   Object.values(m).forEach(i => i.addEventListener('input', () => { preset.value = ''; draw(); }));
@@ -36,6 +36,7 @@ export async function pageSetup() {
   let color = p.color || '#ffffff';
   const colorB = colorButton('Warna halaman', color, c => color = c || '#ffffff');
   const borderT = toggle('Garis tepi halaman', !!p.border);
+  const hfIn = numInput(+(p.hfDist ?? 1.27).toFixed(2), { min: 0, max: 10, step: .1 });
   const def = toggle('Jadikan default untuk dokumen baru', false);
   function draw() {
     const pp = PAPER[sizeSel.value];
@@ -51,7 +52,8 @@ export async function pageSetup() {
     h('div', { style: { display: 'grid', gap: '14px' } },
       field('Orientasi', orientSeg), field('Ukuran kertas', sizeSel), field('Preset margin', preset),
       h('div', { class: 'grid4' }, field('Atas (cm)', m.t), field('Bawah (cm)', m.b), field('Kiri (cm)', m.l), field('Kanan (cm)', m.r)),
-      h('div', { class: 'grid2' }, colorB, borderT)),
+      field('Jarak header & footer dari tepi kertas (cm)', hfIn),
+      h('div', { class: 'grid2' }, colorB, borderT), def),
     h('div', { style: { display: 'grid', placeItems: 'center', minHeight: '180px' } }, prev));
   const plSeg = segmented([['pages', 'Halaman', 'description'], ['pageless', 'Tanpa halaman', 'article']], pageless ? 'pageless' : 'pages', v => pageless = v === 'pageless');
   const pane2 = h('div', { style: { display: 'grid', gap: '14px' } }, plSeg,
@@ -66,6 +68,7 @@ export async function pageSetup() {
   const pg = E.doc.page;
   pg.size = sizeSel.value; pg.orient = p.orient; pg.color = color; pg.pageless = pageless;
   for (const k of ['t', 'b', 'l', 'r']) pg.margins[k] = Math.max(0, Math.min(15, parseFloat(m[k].value) || 0));
+  pg.hfDist = Math.max(0, Math.min(10, parseFloat(hfIn.value) || 0));
   pg.border = borderT.input.checked ? (pg.border || { w: 1, color: '#5f6368', style: 'solid', offset: 24 }) : null;
   if (def.input.checked) { Prefs.pageDefault = { size: pg.size, orient: pg.orient, margins: { ...pg.margins }, color: pg.color, pageless: pg.pageless }; savePrefs(); }
   E.changed();

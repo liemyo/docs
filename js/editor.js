@@ -1,5 +1,6 @@
 // Editor core: lifecycle, history, selection, input pipeline, layout and persistence.
 import { E, Prefs, savePrefs, me } from './state.js';
+import * as Lock from './lock.js';
 import { h, icon, toast, debounce, keyOf, openMenu, closeMenus, menuOpen, dialogOpen, dataURLtoBlob, esc } from './ui.js';
 import { Store } from './store.js';
 import { normalizeDoc, applyStyleVars, newDoc } from './docmodel.js';
@@ -695,6 +696,10 @@ function bind() {
 export async function openEditor(root, id, app) {
   const doc = await Store.get(id);
   if (!doc) { toast('Dokumen tidak ditemukan atau sudah dihapus'); location.replace('#/'); return null; }
+  if (doc.lock && !Lock.isOpen(doc)) {
+    if (!(await Lock.gate(root, doc))) { location.replace('#/'); return null; }
+  }
+  if (/\?l=/.test(location.hash)) history.replaceState(null, '', '#/d/' + id);
   normalizeDoc(doc);
   Object.assign(E, { doc, dead: false, mode: doc.trashed ? 'view' : 'edit', previewing: null, draft: null, activeC: null, paint: null, pendingSize: null, lastRange: null, lastEd: null, hfEditing: null, selImg: null, dirty: false, lastVersion: null, left: null, right: null, app, _wc: null, printing: false });
   E.assets = new Map();

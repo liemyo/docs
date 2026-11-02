@@ -45,6 +45,8 @@ export function buildEditor() {
 
   ui.title = h('input', { class: 'ed-title', spellcheck: 'false', 'aria-label': 'Nama dokumen', maxlength: 200 });
   ui.star = h('button', { class: 'ib sm', 'data-tip': 'Beri bintang', 'aria-label': 'Beri bintang', onclick: () => E.toggleStar() }, icon('star'));
+  ui.lockB = h('button', { class: 'ib sm', hidden: true, 'data-tip': 'Dikunci dengan kata sandi', 'aria-label': 'Kunci dokumen' }, icon('lock', 'fill'));
+  ui.lockB.onclick = () => toggleMenu(ui.lockB, () => ['lock-now', 'lock-set', 'lock-off'].map(id => ({ label: typeof CMD[id].label === 'function' ? CMD[id].label() : CMD[id].label, icon: CMD[id].icon, enabled: CMD[id].enabled, run: () => run(id) })));
   ui.saved = h('span', { class: 'ed-saved', 'data-tip': 'Semua perubahan tersimpan di perangkat ini' }, icon('cloud_done'), h('span', { class: 't' }, 'Tersimpan'));
   ui.menubar = h('nav', { class: 'menubar', role: 'menubar' }, MENUS.map(m => {
     const b = h('button', { role: 'menuitem', 'aria-haspopup': 'true' }, m.label);
@@ -115,7 +117,7 @@ export function buildEditor() {
   ui.top = h('header', { class: 'ed-top glass refract' },
     h('div', { class: 'ed-r1' },
       h('a', { class: 'ed-logo', href: '#/', 'data-tip': 'Beranda Docs', 'aria-label': 'Beranda Docs' }, h('img', { src: 'assets/icon.svg', alt: '' })),
-      h('div', { class: 'ed-tw' }, h('div', { class: 'ed-trow' }, ui.title, ui.star, ui.saved), ui.menubar),
+      h('div', { class: 'ed-tw' }, h('div', { class: 'ed-trow' }, ui.title, ui.star, ui.lockB, ui.saved), ui.menubar),
       actions),
     tb);
 
@@ -201,6 +203,7 @@ export function updateToolbar(o = {}) {
   ui.mode.replaceChildren(icon(m[0], 'sm'), h('span', { class: 'l' }, m[1]), icon('arrow_drop_down'));
   ui.star.replaceChildren(icon('star', E.doc.starred ? 'fill star-on' : ''));
   ui.star.dataset.tip = E.doc.starred ? 'Hapus bintang' : 'Beri bintang';
+  ui.lockB.hidden = !E.doc.lock;
 }
 
 export function updateStatus() {

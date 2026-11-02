@@ -19,6 +19,16 @@ export function paperPx(key) {
   const p = PAPER[key] || PAPER.a4;
   return p.mm ? { w: Math.round(p.mm[0] / 25.4 * 96), h: Math.round(p.mm[1] / 25.4 * 96) } : { w: Math.round(p.w * 96), h: Math.round(p.h * 96) };
 }
+// Margin presets in cm: [top, bottom, left, right]
+export const MARGINS = [
+  ['normal', 'Normal', [2.54, 2.54, 2.54, 2.54]],
+  ['narrow', 'Sempit', [1.27, 1.27, 1.27, 1.27]],
+  ['moderate', 'Sedang', [2.54, 2.54, 1.91, 1.91]],
+  ['wide', 'Lebar', [2.54, 2.54, 5.08, 5.08]],
+  ['skripsi', 'Skripsi (4-3-3-4)', [4, 3, 4, 3]],
+  ['surat', 'Surat dinas', [2, 2, 3, 2]],
+];
+export const marginPreset = m => MARGINS.find(([, , v]) => v.every((x, i) => Math.abs(x - [m.t, m.b, m.l, m.r][i]) < .005))?.[0] || '';
 export const cm2px = v => v * 96 / 2.54;
 export const px2cm = v => v * 2.54 / 96;
 

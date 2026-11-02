@@ -24,8 +24,9 @@ const done = t => new Promise((res, rej) => { t.oncomplete = res; t.onerror = t.
 async function os(name, mode = 'readonly') { return (await open()).transaction(name, mode).objectStore(name); }
 
 const META = ['id', 'title', 'created', 'modified', 'opened', 'starred', 'trashed', 'preview', 'words', 'page', 'styles'];
-const metaOf = d => Object.fromEntries(META.map(k => [k, d[k]]));
-const bodyOf = d => { const o = { ...d }; for (const k of META) if (k !== 'id' && k !== 'page' && k !== 'styles') delete o[k]; return o; };
+// A locked document keeps no readable preview in the listing.
+const metaOf = d => ({ ...Object.fromEntries(META.map(k => [k, d[k]])), ...(d.lock ? { preview: '', locked: true } : { locked: false }) });
+const bodyOf = d => { const o = { ...d }; for (const k of META) if (k !== 'id' && k !== 'page' && k !== 'styles') delete o[k]; delete o.locked; return o; };
 const notify = msg => { bc?.postMessage(msg); listeners.forEach(f => f(msg)); };
 
 export const Store = {
