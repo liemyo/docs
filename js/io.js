@@ -34,7 +34,7 @@ export async function exportDoc(doc, html, kind) {
       downloadBlob(new Blob([htmlToMd(t, doc)], { type: 'text/markdown;charset=utf-8' }), name + '.md');
     } else if (kind === 'json') {
       const versions = await Store.versions.list(doc.id);
-      const data = { format: 'amatu-docs', version: 1, doc: { ...doc, html }, versions };
+      const data = { format: 'amatu-docs', version: 1, doc: { ...doc, html, share: undefined }, versions };   // share-link keys stay private
       downloadBlob(new Blob([JSON.stringify(data)], { type: 'application/json' }), name + '.adocs.json');
     }
   } catch (e) {
@@ -185,7 +185,7 @@ export async function importFile(file) {
     const data = JSON.parse(await readFile(file, 'text'));
     if (data.format !== 'amatu-docs' || !data.doc) throw new Error('Format cadangan tidak dikenali');
     const d = newDoc({ ...data.doc, title: data.doc.title });
-    Object.assign(d, { ...data.doc, id: d.id, created: Date.now(), modified: Date.now(), opened: Date.now(), trashed: 0 });
+    Object.assign(d, { ...data.doc, id: d.id, created: Date.now(), modified: Date.now(), opened: Date.now(), trashed: 0, share: null });
     await Store.put(d);
     for (const v of data.versions || []) await Store.versions.add({ ...v, vid: v.vid + d.id.slice(-4), doc: d.id });
     return d.id;
@@ -214,7 +214,9 @@ async function unpack(s) {
   const ds = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
   return JSON.parse(await new Response(ds).text());
 }
-export async function shareDialog() {
+// Bagikan: live share links (sharing.js). The copy link below packs the whole document into the URL (no account needed).
+export async function shareDialog() { return (await import('./sharing.js')).shareDialog(); }
+export async function copyLinkDialog() {
   await E.save();
   const doc = E.doc;
   const html = E.serialize();

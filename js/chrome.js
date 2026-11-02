@@ -165,6 +165,13 @@ export function refreshAvatar() {
 export function setSaveState(s) {
   const el = E.ui.saved;
   if (!el) return;
+  const live = E.live && s !== 'error' && E.liveState;   // shared document: show the sync state instead
+  if (live) {
+    el.classList.toggle('saving', live[0] === 'sync');
+    el.replaceChildren(icon(live[0]), h('span', { class: 't' }, live[1]));
+    el.dataset.tip = live[2] || live[1];
+    return;
+  }
   el.classList.toggle('saving', s === 'saving');
   el.replaceChildren(icon(s === 'saving' ? 'sync' : s === 'error' ? 'cloud_off' : 'cloud_done'), h('span', { class: 't' }, s === 'saving' ? 'Menyimpan…' : s === 'error' ? 'Gagal menyimpan' : 'Tersimpan'));
 }

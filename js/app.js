@@ -8,11 +8,12 @@ import { mountHome } from './home.js';
 import { openEditor } from './editor.js';
 import { themeDialog, prefsDialog } from './dialogs.js';
 import { importFile, openShared } from './io.js';
+import * as Share from './sharing.js';
 
 Theme.apply();
 installRefraction();
 const root = document.getElementById('app');
-let current = null, busy = false;
+let current = null, busy = false, linkKey = Share.shareKey();
 
 const go = id => { location.hash = '#/d/' + id; };
 const app = {
@@ -77,8 +78,15 @@ async function route() {
       busy = false;
       return route();
     }
+    if (linkKey) {   // ?share=<key>: open the shared document (cached under its own id)
+      const id = await Share.openLink(linkKey);
+      linkKey = null;
+      history.replaceState(null, '', location.pathname + location.search + '#/d/' + id);
+      busy = false;
+      return route();
+    }
     const m = hash.match(/^#\/d\/([\w-]+)/);
-    if (m) current = await openEditor(root, m[1], app);
+    if (m) current = Share.attach(await openEditor(root, m[1], app));
     else {
       document.title = 'Amatu Docs';
       current = mountHome(root, {
