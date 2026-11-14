@@ -556,6 +556,7 @@ function onDblClick(e) {
   if (!img || !E.canEdit()) return;
   if (img.dataset.drawing) N.drawingDialog(img);
   else if (img.dataset.chart) N.chartDialog(img);
+  else if (img.dataset.sig) Img.replaceSignature(img);
 }
 function onContext(e) {
   if (e.shiftKey) return;
@@ -588,6 +589,7 @@ function atMenu() {
     { label: 'Tabel 3 × 3', icon: 'table', run: pick(() => T.insertTable(3, 3)) },
     { label: 'Checklist', icon: 'checklist', run: pick(() => F.toggleList('check')) },
     { label: 'Gambar', icon: 'image', run: pick(() => run('img-upload')) },
+    { label: 'Tanda tangan', icon: 'signature', run: pick(() => run('signature')) },
     { label: 'Persamaan', icon: 'function', run: pick(() => N.equationDialog()) },
     { label: 'Daftar isi', icon: 'toc', run: pick(() => N.insertToc('numbers')) },
     { label: 'Catatan kaki', icon: 'format_list_numbered', run: pick(() => N.insertFootnote()) },

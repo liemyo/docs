@@ -91,6 +91,7 @@ def('img-upload', { label: 'Unggah dari komputer', icon: 'upload', run: async ()
 def('img-url', { label: 'Dengan URL', icon: 'link', run: () => I.insertByUrl(), enabled: editing });
 def('img-camera', { label: 'Kamera', icon: 'photo_camera', run: () => I.insertFromCamera(), enabled: editing });
 def('drawing', { label: 'Gambar baru', icon: 'draw', run: () => N.drawingDialog(), enabled: editing });
+def('signature', { label: 'Tanda tangan', icon: 'signature', run: () => I.insertSignature(), enabled: editing });
 def('hr', { label: 'Garis horizontal', icon: 'horizontal_rule', run: () => N.hRule(), enabled: editing });
 def('chars', { label: 'Karakter khusus', icon: 'special_character', run: () => N.specialChars(), enabled: editing });
 def('equation', { label: 'Persamaan', icon: 'function', kbd: 'Mod+Alt+E', run: () => N.equationDialog(), enabled: editing });
@@ -236,7 +237,7 @@ export function styleItems() {
 }
 export function zoomItems() { return I_('zoom-fit', '-', 'zoom-50', 'zoom-75', 'zoom-90', 'zoom-100', 'zoom-125', 'zoom-150', 'zoom-200'); }
 export function spacingItems() { return I_('lh-1', 'lh-1.15', 'lh-1.5', 'lh-2', '-', 'sb-toggle', 'sa-toggle', '-', 'spacing-custom'); }
-export function imageItems() { return I_('img-upload', 'img-url', 'img-camera', '-', 'drawing'); }
+export function imageItems() { return I_('img-upload', 'img-url', 'img-camera', '-', 'drawing', 'signature'); }
 export function modeItems() { return I_('mode-edit', 'mode-suggest', 'mode-view'); }
 export function tableItems() {
   return I_('t-row-above', 't-row-below', 't-col-left', 't-col-right', '-', 't-del-row', 't-del-col', 't-del', '-', 't-merge', 't-unmerge', 't-dist', 't-header', '-',
@@ -261,6 +262,7 @@ export const MENUS = [
     sub('Gambar', 'image', ['img-upload', 'img-url', 'img-camera']),
     { label: 'Tabel', icon: 'table', enabled: editing, sub: () => [{ el: () => tableGrid((r, c) => T.insertTable(r, c)) }], subCls: 'pop' },
     sub('Gambar bebas', 'draw', ['drawing']),
+    'signature',
     sub('Diagram', 'insert_chart', ['chart-column', 'chart-bar', 'chart-line', 'chart-pie']),
     'hr', '-',
     'chars', 'equation', '-',

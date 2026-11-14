@@ -39,7 +39,7 @@ function clean(node, keepClasses, keepDataUrls, keepReview) {
     const style = c.getAttribute('style') || '';
     const cls = c.getAttribute('class') || '';
     const keep = {};
-    for (const a of ['href', 'src', 'alt', 'colspan', 'rowspan', 'start', 'width', 'data-checked', 'data-tex', 'data-fn', 'data-f', 'data-asset', 'data-kind', 'data-date', 'data-c', 'data-s', 'data-a', 'data-t', 'data-src', 'data-drawing', 'data-chart', 'id', 'contenteditable']) {
+    for (const a of ['href', 'src', 'alt', 'colspan', 'rowspan', 'start', 'width', 'data-checked', 'data-tex', 'data-fn', 'data-f', 'data-asset', 'data-kind', 'data-date', 'data-c', 'data-s', 'data-a', 'data-t', 'data-src', 'data-drawing', 'data-chart', 'data-sig', 'id', 'contenteditable']) {
       if (c.hasAttribute(a)) keep[a] = c.getAttribute(a);
     }
     for (const a of [...c.attributes]) c.removeAttribute(a.name);

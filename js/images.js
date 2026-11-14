@@ -1,6 +1,7 @@
 // Images: insert, select with resize handles, wrap modes, alt text.
 import { E } from './state.js';
 import { h, icon, toast, ask, readFile, dialog, field, esc } from './ui.js';
+import { signaturePanel, defaultSize } from './signature.js';
 
 const MAX_SIDE = 2400;
 
@@ -68,6 +69,43 @@ export async function insertFromCamera() {
   if (shot) insertImage(shot, { alt: 'Foto' });
 }
 
+/* ---------- Tanda tangan ---------- */
+// Dialog bersama dengan Amatu Sheets (signature.js): tersimpan / gambar / ketik / unggah foto (latar dihapus otomatis).
+export function signatureDialog(title = 'Sisipkan tanda tangan', ok = 'Sisipkan') {
+  let closeFn = null, btn = null;
+  const panel = signaturePanel({ toast, onReady: v => { if (btn) btn.disabled = !v; }, onPick: sig => closeFn?.(sig) });
+  return dialog({
+    title, width: 'min(640px, calc(100vw - 32px))', body: panel.el,
+    buttons: [{ label: 'Batal', value: null }, { label: ok, primary: true, action: async () => { const sig = await panel.result(); if (!sig) { toast('Buat tanda tangan dulu'); return false; } return sig; } }],
+    onOpen: (box, close) => {
+      closeFn = close;
+      btn = box.querySelector('[data-primary]');
+      if (btn) btn.disabled = true;
+      setTimeout(() => { if (!box.contains(document.activeElement)) panel.focus(); }, 60);
+    },
+  }).finally(() => panel.destroy());
+}
+// PNG transparan sebaris di posisi kursor, ±3 baris tingginya; bisa diubah ukurannya / dibungkus teks seperti gambar lain.
+export async function insertSignature() {
+  if (!E.canEdit()) return;
+  const sig = await signatureDialog();
+  if (!sig || sig === true) { E.restoreSel(); return; }
+  const id = E.addAsset(sig.url), { w } = defaultSize(sig, 64, 240);
+  E.insertHTML(`<img src="${esc(E.assetURL(id))}" data-asset="${id}" data-sig="1" alt="Tanda tangan" style="width:${Math.min(w, contentWidth())}px">`);
+}
+export async function replaceSignature(img) {
+  if (!E.canEdit() || !img?.isConnected) return;
+  const hh = img.getBoundingClientRect().height / E.zoom;
+  const sig = await signatureDialog('Ganti tanda tangan', 'Ganti');
+  if (!sig || sig === true || !img.isConnected) return;
+  E.hist.before();
+  const id = E.addAsset(sig.url);
+  img.dataset.asset = id; img.dataset.sig = '1'; img.src = E.assetURL(id);
+  if (hh > 4) img.style.width = Math.round(Math.min(contentWidth(), hh * sig.w / sig.h)) + 'px';
+  E.changed();
+  if (selected() === img) position();
+}
+
 /* ---------- Selection & resize ---------- */
 let frame = null, bar = null;
 export const selected = () => E.selImg?.isConnected ? E.selImg : null;
@@ -96,6 +134,7 @@ export function select(img) {
     btn('short_text', 'Teks alternatif', altText),
     E.drawEdit && img.dataset.drawing ? btn('draw', 'Edit gambar', () => E.drawEdit(img)) : null,
     E.chartEdit && img.dataset.chart ? btn('bar_chart', 'Edit diagram', () => E.chartEdit(img)) : null,
+    img.dataset.sig ? btn('signature', 'Ganti tanda tangan', () => replaceSignature(img)) : null,
     h('div', { class: 'tb-sep' }),
     btn('delete', 'Hapus gambar', removeSelected));
   bar.addEventListener('mousedown', e => e.preventDefault());
